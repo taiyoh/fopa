@@ -9,11 +9,13 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
+// Target represents code generation target.
 type Target struct {
 	name   string
 	fields []field
 }
 
+// FindTarget provides Target object from supplied filename and type definition.
 func FindTarget(base, basedir, filename string) (*Target, error) {
 	found := findpath(basedir, filename)
 	if found == "" {
