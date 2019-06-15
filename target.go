@@ -13,6 +13,7 @@ import (
 
 // Target represents code generation target.
 type Target struct {
+	file   string
 	name   string
 	fields []field
 }
@@ -44,6 +45,7 @@ func FindTarget(base, basedir, filename string) (*Target, error) {
 	}
 
 	return &Target{
+		file:   found,
 		name:   baseTyp.Name,
 		fields: fields,
 	}, nil
@@ -77,4 +79,9 @@ func (t *Target) Build(pkgname, factory, builder string) string {
 	}
 
 	return b.String()
+}
+
+// GeneratedPath returns place for generated code.
+func (t *Target) GeneratedPath() string {
+	return strings.Replace(t.file, ".go", "_gen.go", 1)
 }

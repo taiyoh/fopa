@@ -2,6 +2,7 @@ package fopa_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/taiyoh/fopa"
@@ -71,5 +72,10 @@ func (f *test1Factory) FillDdd(v int) test1BuilderFn {
 `
 	if output != ref {
 		t.Error("generated code is something wrong")
+	}
+
+	gen := tgt.GeneratedPath()
+	if gen != filepath.Join(pwd, "internal", "pkg1", "dummy_test_gen.go") {
+		t.Errorf("wrong generated path returns: %s", gen)
 	}
 }
