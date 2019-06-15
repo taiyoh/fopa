@@ -70,7 +70,7 @@ func (f *test1Factory) FillDdd(v int) test1BuilderFn {
 	}
 }
 `
-	if output != ref {
+	if string(output) != ref {
 		t.Error("generated code is something wrong")
 	}
 
