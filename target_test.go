@@ -44,6 +44,8 @@ package pkg1
 
 import (
 	"time"
+	"github.com/taiyoh/fopa/internal/pkg2"
+	mypkg "github.com/taiyoh/fopa/internal/pkg3"
 )
 
 type test1BuilderFn func(*test1)
@@ -83,6 +85,18 @@ func (f *test1Factory) FillDdd(v int) test1BuilderFn {
 func (f *test1Factory) FillEee(v *int) test1BuilderFn {
 	return func(p *test1) {
 		p.eee = v
+	}
+}
+
+func (f *test1Factory) FillFff(v mypkg.Fuga) test1BuilderFn {
+	return func(p *test1) {
+		p.fff = v
+	}
+}
+
+func (f *test1Factory) FillGgg(v string) test1BuilderFn {
+	return func(p *test1) {
+		p.ggg = pkg2.Hoge(v)
 	}
 }
 

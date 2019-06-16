@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"io/ioutil"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/loader"
@@ -13,9 +14,10 @@ import (
 
 // Target represents code generation target.
 type Target struct {
-	file   string
-	name   string
-	fields []field
+	file        string
+	name        string
+	importPaths map[string]importPath
+	fields      []field
 }
 
 // FindTarget provides Target object from supplied filename and type definition.
@@ -33,6 +35,7 @@ func FindTarget(base, basedir, filename string) (*Target, error) {
 	if err != nil {
 		return nil, err
 	}
+	imports := findImports(astf)
 	baseTyp, exists := astf.Scope.Objects[base]
 	if !exists {
 		return nil, fmt.Errorf("type:%s not found", base)
@@ -45,9 +48,10 @@ func FindTarget(base, basedir, filename string) (*Target, error) {
 	}
 
 	return &Target{
-		file:   found,
-		name:   baseTyp.Name,
-		fields: fields,
+		file:        found,
+		name:        baseTyp.Name,
+		importPaths: imports,
+		fields:      fields,
 	}, nil
 }
 
@@ -62,9 +66,7 @@ func (t *Target) Build(pkgname, factory, builder string) []byte {
 	if len(imports) > 0 {
 		fmt.Fprint(b, "import (\n")
 		for _, i := range imports {
-			fmt.Fprint(b, "\t")
-			fmt.Fprintf(b, `"%s"`, i)
-			fmt.Fprint(b, "\n")
+			fmt.Fprintf(b, "\t%s\n", i.string())
 		}
 		fmt.Fprint(b, ")\n\n")
 	}
@@ -98,8 +100,43 @@ func (t *Target) GeneratedPath() string {
 	return strings.Replace(t.file, ".go", "_gen.go", 1)
 }
 
-func (t *Target) imports() []string {
-	imports := []string{}
+func trimPath(p string) string {
+	val := []rune(p)
+	if val[0] == rune(34) {
+		val = val[1:]
+	}
+	if val[len(val)-1] == rune(34) {
+		val = val[:len(val)-1]
+	}
+	return string(val)
+}
+
+func findSig(path string, spec *ast.ImportSpec) (string, bool) {
+	if spec.Name != nil {
+		return spec.Name.Name, true
+	}
+	parts := strings.Split(path, "/")
+	sig := parts[len(parts)-1]
+	return sig, false
+}
+
+func findImports(astf *ast.File) map[string]importPath {
+	imports := map[string]importPath{}
+	for i, spec := range astf.Imports {
+		path := trimPath(spec.Path.Value)
+		sig, exported := findSig(path, spec)
+		imports[sig] = importPath{
+			order:    i,
+			sig:      sig,
+			path:     path,
+			exported: exported,
+		}
+	}
+	return imports
+}
+
+func (t *Target) imports() []importPath {
+	imports := []importPath{}
 	uniq := map[string]struct{}{}
 	for _, f := range t.fields {
 		if f.importPkg == "" {
@@ -108,8 +145,11 @@ func (t *Target) imports() []string {
 		if _, ok := uniq[f.importPkg]; ok {
 			continue
 		}
-		imports = append(imports, f.importPkg)
+		imports = append(imports, t.importPaths[f.importPkg])
 		uniq[f.importPkg] = struct{}{}
 	}
+	sort.Slice(imports, func(i, j int) bool {
+		return imports[i].order < imports[j].order
+	})
 	return imports
 }
