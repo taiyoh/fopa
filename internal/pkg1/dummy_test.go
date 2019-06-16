@@ -11,5 +11,7 @@ type test1 struct {
 	bbb       tt     `fopa:"accept:int"`
 	ccc       hoge   `fopa:"accept:string;expr:hoge{tt2({})}"`
 	ddd       int
+	eee       *int
 	createdAt time.Time
+	deletedAt *time.Time
 }

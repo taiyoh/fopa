@@ -76,9 +76,21 @@ func (f *test1Factory) FillDdd(v int) test1BuilderFn {
 	}
 }
 
+func (f *test1Factory) FillEee(v *int) test1BuilderFn {
+	return func(p *test1) {
+		p.eee = v
+	}
+}
+
 func (f *test1Factory) FillCreatedAt(v time.Time) test1BuilderFn {
 	return func(p *test1) {
 		p.createdAt = v
+	}
+}
+
+func (f *test1Factory) FillDeletedAt(v *time.Time) test1BuilderFn {
+	return func(p *test1) {
+		p.deletedAt = v
 	}
 }
 `
