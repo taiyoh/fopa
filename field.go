@@ -48,6 +48,9 @@ func trimTag(tag string) string {
 }
 
 func (f field) titleName() string {
+	if v, exists := commonInitialisms[f.name]; exists {
+		return v
+	}
 	return strings.Title(f.name)
 }
 
@@ -74,4 +77,46 @@ func (f field) expr() string {
 		return strings.Replace(t.fillExpr, "{}", "v", 1)
 	}
 	return ""
+}
+
+// this mapping from https://github.com/golang/lint/blob/master/lint.go
+var commonInitialisms = map[string]string{
+	"acl":   "ACL",
+	"api":   "API",
+	"ascii": "ASCII",
+	"cpu":   "CPU",
+	"css":   "CSS",
+	"dns":   "DNS",
+	"eof":   "EOF",
+	"guid":  "GUID",
+	"html":  "HTML",
+	"http":  "HTTP",
+	"https": "HTTPS",
+	"id":    "ID",
+	"ip":    "IP",
+	"json":  "JSON",
+	"lhs":   "LHS",
+	"qps":   "QPS",
+	"ram":   "RAM",
+	"rhs":   "RHS",
+	"rpc":   "RPC",
+	"sla":   "SLA",
+	"smtp":  "SMTP",
+	"sql":   "SQL",
+	"ssh":   "SSH",
+	"tcp":   "TCP",
+	"tls":   "TLS",
+	"ttl":   "TTL",
+	"udp":   "UDP",
+	"ui":    "UI",
+	"uid":   "UID",
+	"uuid":  "UUID",
+	"uri":   "URI",
+	"url":   "URL",
+	"utf8":  "UTF8",
+	"vm":    "VM",
+	"xml":   "XML",
+	"xmpp":  "XMPP",
+	"xsrf":  "XSRF",
+	"xss":   "XSS",
 }

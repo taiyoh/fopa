@@ -52,6 +52,12 @@ func (f *test1Factory) SetupTest1(fns ...test1BuilderFn) *test1 {
 	return o
 }
 
+func (f *test1Factory) FillID(v uint64) test1BuilderFn {
+	return func(p *test1) {
+		p.id = v
+	}
+}
+
 func (f *test1Factory) FillBbb(v int) test1BuilderFn {
 	return func(p *test1) {
 		p.bbb = tt(v)
