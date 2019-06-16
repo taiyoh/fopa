@@ -60,7 +60,7 @@ func trimTag(tag string) string {
 }
 
 func (f field) titleName() string {
-	if v, exists := commonInitialisms[f.name]; exists {
+	if v, exists := commonInitialisms[strings.ToLower(f.name)]; exists {
 		return v
 	}
 	return strings.Title(f.name)
