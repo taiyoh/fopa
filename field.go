@@ -26,7 +26,8 @@ func newField(f *ast.Field) field {
 		typName = typ.Name
 	case *ast.SelectorExpr:
 		typ := f.Type.(*ast.SelectorExpr)
-		typName = typ.Sel.Name
+		typBase := typ.X.(*ast.Ident)
+		typName = fmt.Sprintf("%s.%s", typBase.Name, typ.Sel.Name)
 	}
 	return field{
 		name: f.Names[0].Name,

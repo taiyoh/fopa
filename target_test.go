@@ -75,6 +75,12 @@ func (f *test1Factory) FillDdd(v int) test1BuilderFn {
 		p.ddd = v
 	}
 }
+
+func (f *test1Factory) FillCreatedAt(v time.Time) test1BuilderFn {
+	return func(p *test1) {
+		p.createdAt = v
+	}
+}
 `
 	if string(output) != ref {
 		t.Error("generated code is something wrong")
