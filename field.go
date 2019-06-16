@@ -19,10 +19,18 @@ func newField(f *ast.Field) field {
 		rawtag := trimTag(f.Tag.Value)
 		tagVal = reflect.StructTag(rawtag).Get("fopa")
 	}
-	typ := f.Type.(*ast.Ident)
+	var typName string
+	switch f.Type.(type) {
+	case *ast.Ident:
+		typ := f.Type.(*ast.Ident)
+		typName = typ.Name
+	case *ast.SelectorExpr:
+		typ := f.Type.(*ast.SelectorExpr)
+		typName = typ.Sel.Name
+	}
 	return field{
 		name: f.Names[0].Name,
-		typ:  typ.Name,
+		typ:  typName,
 		tag:  newTag(tagVal),
 	}
 }
