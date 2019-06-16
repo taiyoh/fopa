@@ -8,9 +8,10 @@ import (
 )
 
 type field struct {
-	name string
-	typ  string
-	tag  tag
+	name      string
+	importPkg string
+	typ       string
+	tag       tag
 }
 
 func newField(f *ast.Field) field {
@@ -19,17 +20,19 @@ func newField(f *ast.Field) field {
 		rawtag := trimTag(f.Tag.Value)
 		tagVal = reflect.StructTag(rawtag).Get("fopa")
 	}
-	typeName := typeName(f.Type)
+	typeName, importPkg := typeName(f.Type)
 	return field{
-		name: f.Names[0].Name,
-		typ:  typeName,
-		tag:  newTag(tagVal),
+		name:      f.Names[0].Name,
+		importPkg: importPkg,
+		typ:       typeName,
+		tag:       newTag(tagVal),
 	}
 }
 
-func typeName(typ ast.Expr) string {
+func typeName(typ ast.Expr) (string, string) {
 	typName := ""
 	withStar := ""
+	importPkg := ""
 	switch typ.(type) {
 	case *ast.StarExpr:
 		withStar = "*"
@@ -43,8 +46,9 @@ func typeName(typ ast.Expr) string {
 		typ := typ.(*ast.SelectorExpr)
 		typBase := typ.X.(*ast.Ident)
 		typName = fmt.Sprintf("%s%s.%s", withStar, typBase.Name, typ.Sel.Name)
+		importPkg = typBase.Name
 	}
-	return typName
+	return typName, importPkg
 }
 
 func trimTag(tag string) string {

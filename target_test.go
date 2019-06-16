@@ -42,6 +42,10 @@ func TestTargetSuccess(t *testing.T) {
 
 package pkg1
 
+import (
+	"time"
+)
+
 type test1BuilderFn func(*test1)
 
 func (f *test1Factory) SetupTest1(fns ...test1BuilderFn) *test1 {
