@@ -117,7 +117,7 @@ func (f *test1Factory) FillDeletedAt(v *time.Time) test1BuilderFn {
 	}
 
 	gen := tgt.GeneratedPath()
-	if gen != filepath.Join(pwd, "internal", "pkg1", "dummy_test_gen.go") {
+	if gen != filepath.Join(pwd, "internal", "pkg1", "dummy_test_factory_gen.go") {
 		t.Errorf("wrong generated path returns: %s", gen)
 	}
 }
