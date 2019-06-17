@@ -50,7 +50,7 @@ import (
 
 type test1BuilderFn func(*test1)
 
-func (f *test1Factory) SetupTest1(fns ...test1BuilderFn) *test1 {
+func (f *test1Factory) Setup(fns ...test1BuilderFn) *test1 {
 	o := &test1{}
 	for _, fn := range fns {
 		fn(o)
