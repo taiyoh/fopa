@@ -33,10 +33,6 @@ func (s *syntaxTree) Name() string {
 	return s.name
 }
 
-func (s *syntaxTree) TitleName() string {
-	return strings.Title(s.name)
-}
-
 func (s *syntaxTree) ImportPaths() []importPath {
 	imports := []importPath{}
 	uniq := map[string]struct{}{}
