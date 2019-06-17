@@ -50,11 +50,15 @@ import (
 
 type test1BuilderFn func(*test1)
 
-func (f *test1Factory) Setup(fns ...test1BuilderFn) *test1 {
-	o := &test1{}
+func (f *test1Factory) SetupFrom(o *test1, fns ...test1BuilderFn) {
 	for _, fn := range fns {
 		fn(o)
 	}
+}
+
+func (f *test1Factory) Setup(fns ...test1BuilderFn) *test1 {
+	o := &test1{}
+	f.SetupFrom(o, fns...)
 	return o
 }
 
