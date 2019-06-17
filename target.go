@@ -3,11 +3,12 @@ package fopa
 import (
 	"bytes"
 	"fmt"
+	"unicode"
 )
 
 // Target represents code generation target.
 type Target struct {
-	file *file
+	file *File
 	ast  *syntaxTree
 }
 
@@ -17,7 +18,7 @@ func FindTarget(base, basedir, filename string) (*Target, error) {
 	if file == nil {
 		return nil, err
 	}
-	astf, err := file.Ast()
+	astf, err := file.AST()
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func FindTarget(base, basedir, filename string) (*Target, error) {
 }
 
 // Build returns generated go code.
-func (t *Target) Build(pkgname, factory, builder string) []byte {
+func (t *Target) Build(pkgname, factory, builder string) *File {
 	b := bytes.NewBuffer([]byte{})
 
 	t.printHeader(b, pkgname)
@@ -42,7 +43,27 @@ func (t *Target) Build(pkgname, factory, builder string) []byte {
 	t.printSetup(b, factory, builder)
 	t.printFields(b, factory, builder)
 
-	return b.Bytes()
+	file := t.file
+	return &File{
+		baseDir:  file.baseDir,
+		filename: fmt.Sprintf("%s_gen.go", toSnake(factory)),
+		data:     b.Bytes(),
+	}
+}
+
+func toSnake(in string) string {
+	runes := []rune(in)
+	length := len(runes)
+
+	var out []rune
+	for i := 0; i < length; i++ {
+		if i > 0 && unicode.IsUpper(runes[i]) && ((i+1 < length && unicode.IsLower(runes[i+1])) || unicode.IsLower(runes[i-1])) {
+			out = append(out, '_')
+		}
+		out = append(out, unicode.ToLower(runes[i]))
+	}
+
+	return string(out)
 }
 
 func (t *Target) printHeader(b *bytes.Buffer, pkgname string) {
@@ -91,9 +112,4 @@ func (t *Target) printFields(b *bytes.Buffer, factory, builder string) {
 		fmt.Fprintf(b, "\t}\n")
 		fmt.Fprintf(b, "}\n")
 	}
-}
-
-// GeneratedPath returns place for generated code.
-func (t *Target) GeneratedPath(factory string) string {
-	return t.file.GeneratedPath(factory)
 }
