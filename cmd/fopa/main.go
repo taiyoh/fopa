@@ -20,7 +20,7 @@ func main() {
 		panic(err)
 	}
 	output := target.Build(v.pkgName, v.factory, v.builder)
-	ioutil.WriteFile(target.GeneratedPath(), output, 0644)
+	ioutil.WriteFile(target.GeneratedPath(v.factory), output, 0644)
 }
 
 type vars struct {
