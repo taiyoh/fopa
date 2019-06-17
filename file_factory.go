@@ -61,7 +61,7 @@ func buildFile(ast *syntaxTree, baseDir, pkgname, factory, builder string) *File
 	fmt.Fprintf(b, "type %s func(*%s)\n\n", builder, ast.Name())
 
 	objName := ast.Name()
-	fmt.Fprintf(b, "func (f *%s) Setup%s(fns ...%s) *%s {\n", factory, ast.TitleName(), builder, objName)
+	fmt.Fprintf(b, "func (f *%s) Setup(fns ...%s) *%s {\n", factory, builder, objName)
 	fmt.Fprintf(b, "\to := &%s{}\n", objName)
 	fmt.Fprint(b, "\tfor _, fn := range fns {\n")
 	fmt.Fprint(b, "\t\tfn(o)\n")
