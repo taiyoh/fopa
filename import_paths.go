@@ -9,7 +9,7 @@ type importPath struct {
 	path     string
 }
 
-func (i importPath) string() string {
+func (i importPath) String() string {
 	if i.exported {
 		return fmt.Sprintf(`%s "%s"`, i.sig, i.path)
 	}

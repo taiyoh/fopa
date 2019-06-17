@@ -3,55 +3,35 @@ package fopa
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"io/ioutil"
-	"sort"
-	"strings"
-
-	"golang.org/x/tools/go/loader"
 )
 
 // Target represents code generation target.
 type Target struct {
-	file        string
-	name        string
-	importPaths map[string]importPath
-	fields      []field
+	file *file
+	ast  *syntaxTree
 }
 
 // FindTarget provides Target object from supplied filename and type definition.
 func FindTarget(base, basedir, filename string) (*Target, error) {
-	found := findpath(basedir, filename)
-	if found == "" {
+	file, err := findFile(basedir, filename)
+	if err != nil {
+		return nil, err
+	}
+	if file == nil {
 		return nil, nil
 	}
-	data, err := ioutil.ReadFile(found)
+	astf, err := file.Ast()
 	if err != nil {
 		return nil, err
 	}
-	loader := loader.Config{ParserMode: parser.ParseComments}
-	astf, err := loader.ParseFile(filename, string(data))
+
+	synTree, err := findAst(base, astf)
 	if err != nil {
 		return nil, err
 	}
-	imports := findImports(astf)
-	baseTyp, exists := astf.Scope.Objects[base]
-	if !exists {
-		return nil, fmt.Errorf("type:%s not found", base)
-	}
-
-	typeSpec := baseTyp.Decl.(*ast.TypeSpec).Type.(*ast.StructType)
-	fields := []field{}
-	for _, f := range typeSpec.Fields.List {
-		fields = append(fields, newField(f))
-	}
-
 	return &Target{
-		file:        found,
-		name:        baseTyp.Name,
-		importPaths: imports,
-		fields:      fields,
+		file: file,
+		ast:  synTree,
 	}, nil
 }
 
@@ -62,31 +42,32 @@ func (t *Target) Build(pkgname, factory, builder string) []byte {
 	fmt.Fprint(b, "\n\n")
 	fmt.Fprintf(b, "package %s\n\n", pkgname)
 
-	imports := t.imports()
-	if len(imports) > 0 {
+	ast := t.ast
+	objName := ast.Name()
+	if imports := ast.ImportPaths(); len(imports) > 0 {
 		fmt.Fprint(b, "import (\n")
 		for _, i := range imports {
-			fmt.Fprintf(b, "\t%s\n", i.string())
+			fmt.Fprintf(b, "\t%s\n", i.String())
 		}
 		fmt.Fprint(b, ")\n\n")
 	}
 
-	fmt.Fprintf(b, "type %s func(*%s)\n\n", builder, t.name)
+	fmt.Fprintf(b, "type %s func(*%s)\n\n", builder, objName)
 
-	fmt.Fprintf(b, "func (f *%s) Setup%s(fns ...%s) *%s {\n", factory, strings.Title(t.name), builder, t.name)
-	fmt.Fprintf(b, "\to := &%s{}\n", t.name)
+	fmt.Fprintf(b, "func (f *%s) Setup%s(fns ...%s) *%s {\n", factory, ast.TitleName(), builder, objName)
+	fmt.Fprintf(b, "\to := &%s{}\n", objName)
 	fmt.Fprint(b, "\tfor _, fn := range fns {\n")
 	fmt.Fprint(b, "\t\tfn(o)\n")
 	fmt.Fprint(b, "\t}\n")
 	fmt.Fprint(b, "\treturn o\n")
 	fmt.Fprint(b, "}\n")
 
-	for _, f := range t.fields {
+	for _, f := range ast.fields {
 		if !f.tag.enabled {
 			continue
 		}
 		fmt.Fprintf(b, "\nfunc (f *%s) Fill%s(%s) %s {\n", factory, f.titleName(), f.args(), builder)
-		fmt.Fprintf(b, "\treturn func(p *%s) {\n", t.name)
+		fmt.Fprintf(b, "\treturn func(p *%s) {\n", ast.name)
 		fmt.Fprintf(b, "\t\tp.%s = %s\n", f.name, f.expr())
 		fmt.Fprintf(b, "\t}\n")
 		fmt.Fprintf(b, "}\n")
@@ -96,60 +77,6 @@ func (t *Target) Build(pkgname, factory, builder string) []byte {
 }
 
 // GeneratedPath returns place for generated code.
-func (t *Target) GeneratedPath() string {
-	return strings.Replace(t.file, ".go", "_gen.go", 1)
-}
-
-func trimPath(p string) string {
-	val := []rune(p)
-	if val[0] == rune(34) {
-		val = val[1:]
-	}
-	if val[len(val)-1] == rune(34) {
-		val = val[:len(val)-1]
-	}
-	return string(val)
-}
-
-func findSig(path string, spec *ast.ImportSpec) (string, bool) {
-	if spec.Name != nil {
-		return spec.Name.Name, true
-	}
-	parts := strings.Split(path, "/")
-	sig := parts[len(parts)-1]
-	return sig, false
-}
-
-func findImports(astf *ast.File) map[string]importPath {
-	imports := map[string]importPath{}
-	for i, spec := range astf.Imports {
-		path := trimPath(spec.Path.Value)
-		sig, exported := findSig(path, spec)
-		imports[sig] = importPath{
-			order:    i,
-			sig:      sig,
-			path:     path,
-			exported: exported,
-		}
-	}
-	return imports
-}
-
-func (t *Target) imports() []importPath {
-	imports := []importPath{}
-	uniq := map[string]struct{}{}
-	for _, f := range t.fields {
-		if f.importPkg == "" {
-			continue
-		}
-		if _, ok := uniq[f.importPkg]; ok {
-			continue
-		}
-		imports = append(imports, t.importPaths[f.importPkg])
-		uniq[f.importPkg] = struct{}{}
-	}
-	sort.Slice(imports, func(i, j int) bool {
-		return imports[i].order < imports[j].order
-	})
-	return imports
+func (t *Target) GeneratedPath(factory string) string {
+	return t.file.GeneratedPath(factory)
 }
