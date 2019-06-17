@@ -19,14 +19,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	output := target.Build(v.pkgName, v.factory, v.builder)
-	ioutil.WriteFile(target.GeneratedPath(v.factory), output, 0644)
+	f := target.Build(v.pkgName, v.factory, v.builder)
+	if v.stdout {
+		fmt.Print(string(f.Raw()))
+		os.Exit(0)
+	}
+	ioutil.WriteFile(f.FilePath(), f.Raw(), 0644)
 }
 
 type vars struct {
 	base     string
 	factory  string
 	builder  string
+	stdout   bool
 	filename string
 	pkgName  string
 	pwd      string
@@ -36,9 +41,11 @@ func initialize() (*vars, error) {
 	base := ""
 	factory := ""
 	builder := ""
-	flag.StringVar(&base, "base", "", "base struct")
-	flag.StringVar(&factory, "factory", "", "factory struct")
-	flag.StringVar(&builder, "builder", "", "factory struct")
+	stdout := false
+	flag.StringVar(&base, "base", "", "base struct for target")
+	flag.StringVar(&factory, "factory", "", "fill factory struct name if not {.base}Factory")
+	flag.StringVar(&builder, "builder", "", "build struct if already defined")
+	flag.BoolVar(&stdout, "stdout", false, "set true if debug")
 	flag.Parse()
 
 	if base == "" {
@@ -66,6 +73,7 @@ func initialize() (*vars, error) {
 		base:     base,
 		factory:  factory,
 		builder:  builder,
+		stdout:   stdout,
 		filename: filename,
 		pkgName:  pkgName,
 		pwd:      pwd,
